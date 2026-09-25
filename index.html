@@ -199,7 +199,6 @@ footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem;m
       <ul id="recList"><!-- filled by JS --></ul>
     </div>
   </div>
-     </div>
 
 <div class="card fade-in" style="margin-top:1.5rem;overflow:hidden">
   <strong style="display:block;padding:1.2rem 1.2rem 0">Monitoring Map</strong>
@@ -384,23 +383,19 @@ function sendMsg(){
 }
 function quickAsk(q){document.getElementById("aiInput").value=q;sendMsg();}
 
-/* ---------- INITIAL RENDER ---------- */
-renderAqi();
-renderMetrics();
-renderRecs();
-renderChart();
-window.addEventListener("resize",renderChart);
-bubble("Hi! I'm the AetherAir AI Assistant 🌿 Ask me anything about your air quality.","bot");
-     const airMap = L.map("airMap").setView([28.56, 77.19], 13);
+     // ==================== INTERACTIVE MAP ====================
+
+const airMap = L.map("airMap").setView([28.56, 77.19], 13);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(airMap);
 
-L.marker([28.56, 77.19]).addTo(airMap)
+let currentMarker = L.marker([28.56, 77.19]).addTo(airMap)
   .bindPopup("<b>AetherAir Monitoring Station</b><br>Green Park, New Delhi")
   .openPopup();
-     async function searchLocation() {
+
+async function searchLocation() {
   const query = document.getElementById("locationSearch").value.trim();
 
   if (!query) {
@@ -426,7 +421,9 @@ L.marker([28.56, 77.19]).addTo(airMap)
 
     airMap.setView([lat, lon], 13);
 
-    L.marker([lat, lon]).addTo(airMap)
+    airMap.removeLayer(currentMarker);
+
+    currentMarker = L.marker([lat, lon]).addTo(airMap)
       .bindPopup("<b>" + results[0].display_name + "</b>")
       .openPopup();
 
@@ -434,6 +431,15 @@ L.marker([28.56, 77.19]).addTo(airMap)
     alert("Unable to find the location. Please try again.");
   }
 }
+
+renderAqi();
+renderMetrics();
+renderRecs();
+renderChart();
+
+window.addEventListener("resize",renderChart);
+
+bubble("Hi! I'm the AetherAir AI Assistant 🌿 Ask me anything about your air quality.","bot");
 </script>
 </body>
 </html>
