@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AetherAir – Smart Air Quality Monitoring System</title>
+
+<!-- ==========================================================
+     AetherAir – Smart Air Quality Monitoring System
+     Tagline: "Understand Your Air. Protect Your Health."
+     Single-file project: styles, markup and logic are
+     separated by big comment banners so it's easy to edit.
+=========================================================== -->
+
+<style>
+/* ============ 1. DESIGN TOKENS (colors, spacing) ============ */
+:root{
+  --bg:#f4f7fa;
+  --surface:#ffffff;
+  --ink:#1e293b;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --teal:#0d9488;
+  --teal-dark:#0f766e;
+  --radius:16px;
+  --shadow:0 2px 10px rgba(15,23,42,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+img,svg{vertical-align:middle}
+button{font:inherit;cursor:pointer}
+
+/* ============ 2. NAVIGATION BAR ============ */
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:1.15rem;color:var(--teal-dark)}
+.logo span{color:var(--ink)}
+.nav-links{display:flex;gap:1.2rem;list-style:none}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:.92rem;font-weight:500}
+.nav-links a:hover{color:var(--teal-dark)}
+.burger{display:none;background:none;border:none;font-size:1.5rem;color:var(--teal-dark)}
+
+/* ============ 3. LAYOUT HELPERS ============ */
+.wrap{max-width:1100px;margin:auto;padding:1rem}
+.section-title{font-size:1.15rem;font-weight:700;margin:2rem 0 1rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+
+/* ============ 4. HERO / AQI DASHBOARD ============ */
+.hero{display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem;align-items:center;margin-top:1.5rem}
+.aqi-card{padding:2rem;text-align:center}
+.aqi-value{font-size:3.2rem;font-weight:800;line-height:1}
+.aqi-label{font-weight:700;margin-top:.3rem}
+.aqi-sub{color:var(--muted);font-size:.9rem;margin-top:.4rem}
+.hero-text h1{font-size:1.9rem;line-height:1.25}
+.hero-text p{color:var(--muted);margin:.6rem 0 1.2rem}
+.btn{display:inline-block;background:var(--teal);color:#fff;border:none;border-radius:10px;padding:.65rem 1.3rem;font-weight:600;transition:background .2s}
+.btn:hover{background:var(--teal-dark)}
+
+/* ============ 5. POLLUTANT CARDS GRID ============ */
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
+.metric{padding:1.2rem;display:flex;flex-direction:column;gap:.5rem;transition:transform .25s}
+.metric:hover{transform:translateY(-4px)}
+.metric .m-icon{width:40px;height:40px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;color:var(--teal)}
+.metric .m-name{font-size:.85rem;color:var(--muted)}
+.metric .m-val{font-size:1.5rem;font-weight:700}
+.metric .m-unit{font-size:.8rem;color:var(--muted);font-weight:400}
+
+/* ============ 6. TREND CHART + WEATHER ROW ============ */
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;margin-top:1.5rem}
+.chart-card{padding:1.2rem}
+.chart-card canvas{width:100%;height:230px}
+.legend{display:flex;gap:1rem;font-size:.8rem;color:var(--muted);margin-top:.5rem}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:.3rem}
+.weather{padding:1.2rem;display:flex;flex-direction:column;gap:.9rem}
+.w-row{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:.5rem}
+.w-row b{font-weight:600}
+
+/* ============ 7. LOCATION + RECOMMENDATIONS ============ */
+.two-col2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
+.loc-card{padding:1.2rem;display:flex;gap:1rem;align-items:flex-start}
+.rec-card{padding:1.2rem}
+.rec-card ul{list-style:none;margin-top:.6rem}
+.rec-card li{padding:.4rem 0;border-bottom:1px dashed var(--line);font-size:.92rem}
+.rec-card li::before{content:"✔";color:var(--teal);margin-right:.5rem;font-weight:700}
+
+/* ============ 8. AI ASSISTANT SECTION ============ */
+.ai-card{margin-top:1.5rem;padding:1.2rem}
+.ai-head{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem}
+.ai-badge{background:#ecfdf5;color:var(--teal-dark);font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:99px}
+.ai-log{height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.6rem;background:#f8fafc}
+.msg{max-width:85%;padding:.55rem .9rem;border-radius:12px;font-size:.92rem;animation:pop .25s ease}
+.msg.user{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+.ai-input{display:flex;gap:.6rem;margin-top:.8rem}
+.ai-input input{flex:1;padding:.6rem .9rem;border:1px solid var(--line);border-radius:10px;font:inherit}
+.ai-input input:focus{outline:2px solid var(--teal);border-color:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+.chip{background:#f1f5f9;border:1px solid var(--line);border-radius:99px;padding:.35rem .8rem;font-size:.8rem;color:var(--muted)}
+.chip:hover{background:#ecfdf5;color:var(--teal-dark)}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ============ 9. FLOATING AI BUTTON (mobile visibility) ============ */
+.fab{position:fixed;bottom:1.2rem;right:1.2rem;width:56px;height:56px;border-radius:50%;background:var(--teal);color:#fff;border:none;box-shadow:0 6px 18px rgba(13,148,136,.4);display:none;z-index:60;font-size:1.4rem}
+
+/* ============ 10. FOOTER ============ */
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem;margin-top:2rem;border-top:1px solid var(--line)}
+
+/* ============ 11. ANIMATIONS ============ */
+.fade-in{animation:fade .5s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ============ 12. RESPONSIVE BREAKPOINTS ============ */
+@media(max-width:820px){
+  .hero,.two-col,.two-col2{grid-template-columns:1fr}
+  .nav-links{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;flex-direction:column;padding:1rem;border-bottom:1px solid var(--line)}
+  .nav-links.open{display:flex}
+  .burger{display:block}
+  .fab{display:block}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== NAVIGATION BAR ==================== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg>
+      Aether<span>Air</span>
+    </div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#pollutants">Pollutants</a></li>
+      <li><a href="#trends">Trends</a></li>
+      <li><a href="#weather">Weather</a></li>
+      <li><a href="#assistant">AI Assistant</a></li>
+    </ul>
+    <button class="burger" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ==================== HERO + AQI GAUGE ==================== -->
+  <section class="hero" id="dashboard">
+    <div class="card aqi-card fade-in">
+      <canvas id="aqiRing" width="200" height="200" style="max-width:200px"></canvas>
+      <div class="aqi-value" id="aqiValue">68</div>
+      <div class="aqi-label" id="aqiLabel" style="color:#eab308">Moderate</div>
+      <div class="aqi-sub">Overall Air Quality Index · updated just now</div>
+    </div>
+    <div class="hero-text fade-in">
+      <h1>Understand Your Air.<br>Protect Your Health.</h1>
+      <p>AetherAir is a smart, software-based air quality monitoring dashboard. It tracks key pollutants, shows live trends, and gives personalized recommendations so you always know when the air around you is safe.</p>
+      <a class="btn" href="#assistant">Ask the AI Assistant</a>
+    </div>
+  </section>
+
+  <!-- ==================== POLLUTANT CARDS ==================== -->
+  <h2 class="section-title" id="pollutants">Live Pollutant Readings</h2>
+  <div class="grid-cards" id="metricGrid"><!-- filled by JS --></div>
+
+  <!-- ==================== TREND CHART + WEATHER ==================== -->
+  <h2 class="section-title" id="trends">Air Quality Trends</h2>
+  <div class="two-col">
+    <div class="card chart-card fade-in">
+      <strong>AQI – Last 12 Hours</strong>
+      <canvas id="trendChart"></canvas>
+      <div class="legend">
+        <span><i style="background:#0d9488"></i>AQI value</span>
+        <span><i style="background:#f59e0b"></i>WHO safe guideline (50)</span>
+      </div>
+    </div>
+    <div class="card weather fade-in" id="weatherBox">
+      <strong id="weather">Local Weather & Air</strong>
+      <div class="w-row"><span>Location</span><b id="wLoc">Green Park, New Delhi</b></div>
+      <div class="w-row"><span>Condition</span><b>⛅ Partly Cloudy</b></div>
+      <div class="w-row"><span>Temperature</span><b>28 °C</b></div>
+      <div class="w-row"><span>Humidity</span><b>54%</b></div>
+      <div class="w-row"><span>Wind</span><b>12 km/h NE</b></div>
+      <div class="w-row" style="border:none"><span>Next 6h forecast</span><b style="color:var(--teal)">AQI stable → improving</b></div>
+    </div>
+  </div>
+
+  <!-- ==================== LOCATION + RECOMMENDATIONS ==================== -->
+  <h2 class="section-title" id="location">Location & Recommendations</h2>
+  <div class="two-col2">
+    <div class="card loc-card fade-in">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <div>
+        <strong>Monitoring Station · Green Park</strong>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:.3rem">New Delhi, India · 28.56° N, 77.19° E<br>Last sync: just now · Station status: <b style="color:var(--teal)">Online</b></p>
+      </div>
+    </div>
+    <div class="card rec-card fade-in">
+      <strong>Health Recommendations</strong>
+      <ul id="recList"><!-- filled by JS --></ul>
+    </div>
+  </div>
+
+  <!-- ==================== AI ASSISTANT ==================== -->
+  <h2 class="section-title" id="assistant">AI Assistant</h2>
+  <div class="card ai-card fade-in">
+    <div class="ai-head">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/></svg>
+      <strong>AetherAir Assistant</strong>
+      <span class="ai-badge">MOCK AI · OFFLINE</span>
+    </div>
+    <div class="ai-log" id="aiLog"></div>
+    <div class="chips">
+      <button class="chip" onclick="quickAsk('What is the AQI right now?')">What is the AQI right now?</button>
+      <button class="chip" onclick="quickAsk('Is it safe to exercise outside?')">Is it safe to exercise?</button>
+      <button class="chip" onclick="quickAsk('What is PM2.5?')">What is PM2.5?</button>
+      <button class="chip" onclick="quickAsk('How can I improve indoor air?')">Improve indoor air?</button>
+    </div>
+    <div class="ai-input">
+      <input id="aiInput" placeholder="Ask anything about air quality…" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="btn" onclick="sendMsg()">Send</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- Floating AI button: keeps the assistant reachable on mobile -->
+<button class="fab" onclick="document.getElementById('assistant').scrollIntoView({behavior:'smooth'})">💬</button>
+
+<footer>
+  AetherAir · "Understand Your Air. Protect Your Health." · Software-based monitoring with mock data · College demo project
+</footer>
+
+<script>
+/* ==========================================================
+   JAVASCRIPT – 4 modules:
+   1) DATA (edit mock values here)
+   2) AQI helpers (levels, colors, recommendations)
+   3) UI rendering (gauge, cards, chart)
+   4) AI assistant (rule-based mock answers)
+========================================================== */
+
+/* ---------- 1. DATA (mock) — edit these numbers freely ---------- */
+const DATA = {
+  location: "Green Park, New Delhi",
+  aqi: 68,
+  metrics: [
+    { name:"PM2.5", unit:"µg/m³", val:34, icon:"🌫️", safe:25 },
+    { name:"PM10",  unit:"µg/m³", val:71, icon:"💨", safe:50 },
+    { name:"CO",    unit:"ppm",   val:1.2, icon:"🔥", safe:4 },
+    { name:"CO₂",   unit:"ppm",   val:520, icon:"🌿", safe:800 },
+    { name:"Temp",  unit:"°C",    val:28, icon:"🌡️", safe:35 },
+    { name:"Humidity", unit:"%",  val:54, icon:"💧", safe:60 }
+  ],
+  // 12 hourly AQI readings (oldest → newest)
+  trend:[62,65,71,78,74,69,66,63,60,64,66,68]
+};
+
+/* ---------- 2) AQI helpers ---------- */
+function aqiLevel(a){
+  if(a<=50)  return {label:"Good",           color:"#22c55e", advice:["Air is clean — enjoy outdoor activities.","Great day to open windows and ventilate.","No precautions needed for anyone."]};
+  if(a<=100) return {label:"Moderate",       color:"#eab308", advice:["Sensitive people should limit long outdoor exertion.","Consider a mask during heavy traffic hours.","Keep an air purifier on indoors if available."]};
+  if(a<=150) return {label:"Unhealthy for Sensitive Groups",color:"#f97316", advice:["Children and elderly should reduce outdoor activity.","Wear an N95 mask outdoors.","Run air purifiers and keep windows closed."]};
+  if(a<=200) return {label:"Unhealthy",      color:"#ef4444", advice:["Avoid outdoor exercise entirely.","Everyone should wear a mask outside.","Seal windows and use purifiers indoors."]};
+  if(a<=300) return {label:"Very Unhealthy", color:"#a855f7", advice:["Stay indoors as much as possible.","Use N95/FFP2 masks if you must go out.","Run purifiers on maximum setting."]};
+  return       {label:"Hazardous",           color:"#7f1d1d", advice:["Emergency conditions — avoid all outdoor exposure.","Keep windows sealed at all times.","Seek indoor spaces with filtered air."]};
+}
+
+/* ---------- 3. UI rendering ---------- */
+// AQI ring gauge drawn on canvas
+function drawRing(aqi,color){
+  const c=document.getElementById("aqiRing"),ctx=c.getContext("2d");
+  const pct=Math.min(aqi/300,1), cx=100,cy=100,r=80;
+  ctx.clearRect(0,0,200,200);
+  ctx.lineWidth=14;ctx.lineCap="round";
+  ctx.strokeStyle="#e2e8f0";
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=color;
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+pct*Math.PI*2);ctx.stroke();
+}
+
+// Pollutant cards
+function renderMetrics(){
+  document.getElementById("metricGrid").innerHTML = DATA.metrics.map(m=>{
+    const ok = m.val<=m.safe;
+    return '<div class="card metric fade-in">' +
+      '<div class="m-icon">'+m.icon+'</div>' +
+      '<div class="m-name">'+m.name+'</div>' +
+      '<div class="m-val">'+m.val+'<span class="m-unit"> '+m.unit+'</span></div>' +
+      '<div style="font-size:.78rem;color:'+(ok?'#22c55e':'#f97316')+'">'+(ok?'● Safe range':'● Above guideline')+'</div>' +
+    '</div>';
+  }).join("");
+}
+
+// Recommendations list from current AQI level
+function renderRecs(){
+  const lv=aqiLevel(DATA.aqi);
+  document.getElementById("recList").innerHTML = lv.advice.map(a=>'<li>'+a+'</li>').join("");
+}
+
+// AQI headline
+function renderAqi(){
+  const lv=aqiLevel(DATA.aqi);
+  document.getElementById("aqiValue").textContent=DATA.aqi;
+  const lbl=document.getElementById("aqiLabel");
+  lbl.textContent=lv.label; lbl.style.color=lv.color;
+  drawRing(DATA.aqi,lv.color);
+}
+
+// Simple line chart on canvas (no external library)
+function renderChart(){
+  const c=document.getElementById("trendChart"),ctx=c.getContext("2d");
+  const W=c.width=c.clientWidth,H=c.height=230,pad=30;
+  const data=DATA.trend,max=120;
+  ctx.clearRect(0,0,W,H);
+  // WHO guideline line at 50
+  const gy=H-pad-(50/max)*(H-2*pad);
+  ctx.strokeStyle="#f59e0b";ctx.setLineDash([5,5]);
+  ctx.beginPath();ctx.moveTo(pad,gy);ctx.lineTo(W-pad,gy);ctx.stroke();ctx.setLineDash([]);
+  // AQI line
+  ctx.strokeStyle="#0d9488";ctx.lineWidth=2.5;ctx.lineJoin="round";
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x=pad+i*((W-2*pad)/(data.length-1));
+    const y=H-pad-(v/max)*(H-2*pad);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.stroke();
+  // points
+  data.forEach((v,i)=>{
+    const x=pad+i*((W-2*pad)/(data.length-1));
+    const y=H-pad-(v/max)*(H-2*pad);
+    ctx.fillStyle="#0d9488";ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();
+  });
+  ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
+  ctx.fillText("12h ago",pad,H-8);
+  ctx.fillText("now",W-pad-24,H-8);
+}
+
+/* ---------- 4. AI Assistant (rule-based mock) ---------- */
+const log=document.getElementById("aiLog");
+function bubble(text,who){
+  const d=document.createElement("div");
+  d.className="msg "+who;d.textContent=text;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+// Finds an answer based on keywords in the question
+function botAnswer(q){
+  q=q.toLowerCase();
+  const lv=aqiLevel(DATA.aqi);
+  if(q.includes("aqi")||q.includes("index"))
+    return "The current AQI is "+DATA.aqi+' — "'+lv.label+'". '+lv.advice[0];
+  if(q.includes("exercise")||q.includes("run")||q.includes("outdoor"))
+    return DATA.aqi<=100 ? "Yes, moderate outdoor exercise is fine, though sensitive groups should take it easy." : "I'd recommend indoor exercise today — the air quality isn't ideal for outdoor workouts.";
+  if(q.includes("pm2.5")||q.includes("pm25"))
+    return "PM2.5 means particles smaller than 2.5 microns. They're dangerous because they penetrate deep into the lungs. Current level: "+DATA.metrics[0].val+" µg/m³.";
+  if(q.includes("pm10"))
+    return "PM10 are coarse inhalable particles (dust, pollen). Current level: "+DATA.metrics[1].val+" µg/m³.";
+  if(q.includes("indoor")||q.includes("improve")||q.includes("purifier"))
+    return "Keep windows closed during peak pollution, run an air purifier, add indoor plants like snake plant, and avoid smoking indoors.";
+  if(q.includes("mask"))
+    return DATA.aqi>100 ? "Yes — wear an N95/FFP2 mask outdoors today." : "You don't strictly need a mask right now, but carry one in heavy traffic.";
+  if(q.includes("weather")||q.includes("temperature")||q.includes("humidity"))
+    return "It's 28°C with 54% humidity and light NE wind at 12 km/h. AQI is expected to stay stable over the next 6 hours.";
+  if(q.includes("hello")||q.includes("hi"))
+    return "Hello! I'm the AetherAir assistant. Ask me about AQI, pollutants, masks, or health tips.";
+  return "I'm a mock assistant, so I know a limited set of topics: AQI, PM2.5, PM10, masks, exercise, indoor air and weather. Try one of the suggestion chips!";
+}
+function sendMsg(){
+  const inp=document.getElementById("aiInput"),text=inp.value.trim();
+  if(!text)return;
+  bubble(text,"user");inp.value="";
+  setTimeout(()=>bubble(botAnswer(text),"bot"),450);
+}
+function quickAsk(q){document.getElementById("aiInput").value=q;sendMsg();}
+
+/* ---------- INITIAL RENDER ---------- */
+renderAqi();
+renderMetrics();
+renderRecs();
+renderChart();
+window.addEventListener("resize",renderChart);
+bubble("Hi! I'm the AetherAir AI Assistant 🌿 Ask me anything about your air quality.","bot");
+</script>
+</body>
+</html>
