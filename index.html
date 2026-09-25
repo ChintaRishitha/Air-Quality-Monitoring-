@@ -394,7 +394,66 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let currentMarker = L.marker([28.56, 77.19]).addTo(airMap)
   .bindPopup("<b>AetherAir Monitoring Station</b><br>Green Park, New Delhi")
   .openPopup();
+async function updateAirQuality(lat, lon) {
+  try {
+    const airUrl =
+      "https://air-quality-api.open-meteo.com/v1/air-quality" +
+      "?latitude=" + lat +
+      "&longitude=" + lon +
+      "&current=us_aqi,pm2_5,pm10,carbon_monoxide,carbon_dioxide" +
+      "&timezone=auto";
 
+    const weatherUrl =
+      "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=" + lat +
+      "&longitude=" + lon +
+      "&current=temperature_2m,relative_humidity_2m,wind_speed_10m" +
+      "&timezone=auto";
+
+    const [airResponse, weatherResponse] = await Promise.all([
+      fetch(airUrl),
+      fetch(weatherUrl)
+    ]);
+
+    if (!airResponse.ok || !weatherResponse.ok) {
+      throw new Error("API request failed");
+    }
+
+    const airData = await airResponse.json();
+    const weatherData = await weatherResponse.json();
+
+    const air = airData.current;
+    const weather = weatherData.current;
+
+    DATA.aqi = Math.round(air.us_aqi);
+    DATA.metrics[0].val = Number(air.pm2_5.toFixed(1));
+    DATA.metrics[1].val = Number(air.pm10.toFixed(1));
+    DATA.metrics[2].val = Number((air.carbon_monoxide / 1000).toFixed(2));
+    DATA.metrics[3].val = Math.round(air.carbon_dioxide);
+    DATA.metrics[4].val = Math.round(weather.temperature_2m);
+    DATA.metrics[5].val = Math.round(weather.relative_humidity_2m);
+
+    document.getElementById("wLoc").textContent = DATA.location;
+
+    document.querySelector("#weatherBox .w-row:nth-of-type(2) b").textContent =
+  weather.temperature_2m + " °C";
+
+document.querySelector("#weatherBox .w-row:nth-of-type(3) b").textContent =
+  weather.relative_humidity_2m + "%";
+
+document.querySelector("#weatherBox .w-row:nth-of-type(4) b").textContent =
+  weather.wind_speed_10m + " km/h";
+
+    renderAqi();
+    renderMetrics();
+    renderRecs();
+    renderChart();
+
+  } catch (error) {
+    console.error("Live data error:", error);
+    alert("Unable to fetch live air-quality data for this location.");
+  }
+}
 async function searchLocation() {
   const query = document.getElementById("locationSearch").value.trim();
 
@@ -418,6 +477,8 @@ async function searchLocation() {
 
     const lat = parseFloat(results[0].lat);
     const lon = parseFloat(results[0].lon);
+       DATA.location = results[0].display_name;
+await updateAirQuality(lat, lon);
 
     airMap.setView([lat, lon], 13);
 
