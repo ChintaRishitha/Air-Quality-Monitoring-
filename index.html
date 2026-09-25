@@ -118,6 +118,8 @@ footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem;m
   .fab{display:block}
 }
 </style>
+     <!-- Leaflet Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -197,6 +199,12 @@ footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem;m
       <ul id="recList"><!-- filled by JS --></ul>
     </div>
   </div>
+     </div>
+
+<div class="card fade-in" style="margin-top:1.5rem;overflow:hidden">
+  <strong style="display:block;padding:1.2rem 1.2rem 0">Monitoring Map</strong>
+  <div id="airMap" style="height:320px;margin-top:1rem"></div>
+</div>
 
   <!-- ==================== AI ASSISTANT ==================== -->
   <h2 class="section-title" id="assistant">AI Assistant</h2>
@@ -227,7 +235,7 @@ footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem;m
 <footer>
   AetherAir · "Understand Your Air. Protect Your Health." · Software-based monitoring with mock data · College demo project
 </footer>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ==========================================================
    JAVASCRIPT – 4 modules:
@@ -378,6 +386,15 @@ renderRecs();
 renderChart();
 window.addEventListener("resize",renderChart);
 bubble("Hi! I'm the AetherAir AI Assistant 🌿 Ask me anything about your air quality.","bot");
+     const airMap = L.map("airMap").setView([28.56, 77.19], 13);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(airMap);
+
+L.marker([28.56, 77.19]).addTo(airMap)
+  .bindPopup("<b>AetherAir Monitoring Station</b><br>Green Park, New Delhi")
+  .openPopup();
 </script>
 </body>
 </html>
